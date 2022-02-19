@@ -86,7 +86,14 @@ namespace System.Reactive
 
         public virtual void Run(IObservable<TSource> source)
         {
-            SetUpstream(source.SubscribeSafe(this));
+            if (source is IProducer<TSource> producer)
+            {
+                producer.SubscribeRaw(this, enableSafeguard: false, upstream => SetUpstream(upstream));
+            }
+            else
+            {
+                SetUpstream(source.SubscribeSafe(this));
+            }
         }
 
         public abstract void OnNext(TSource value);

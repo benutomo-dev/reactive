@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -599,6 +600,22 @@ namespace ReactiveTests.Tests
             //
             // No assert needed; test will stack overflow for failure.
             //
+        }
+
+        [Fact]
+        public void Take_my()
+        {
+            int iterate = 0;
+
+            var last = Observable.Return(Unit.Default)
+                      .Select(_ => ++iterate)
+                      .Do(v => { if (v > 1000) throw new Exception(); })
+                      .Repeat()
+                      .Take(3)
+                      .Wait();
+
+            Assert.Equal(3, last);
+            Assert.Equal(3, iterate);
         }
 
         #endregion

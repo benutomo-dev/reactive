@@ -385,7 +385,9 @@ namespace System
 
             if (source is IProducer<T> producer)
             {
-                return producer.SubscribeRaw(observer, enableSafeguard: false);
+                IDisposable upstream = null!;
+                producer.SubscribeRaw(observer, enableSafeguard: true, v => upstream = v);
+                return upstream;
             }
 
             var d = Disposable.Empty;

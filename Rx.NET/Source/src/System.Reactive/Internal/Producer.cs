@@ -13,7 +13,7 @@ namespace System.Reactive
     /// <typeparam name="TSource">Type of the resulting sequence's elements.</typeparam>
     internal interface IProducer<out TSource> : IObservable<TSource>
     {
-        IDisposable SubscribeRaw(IObserver<TSource> observer, bool enableSafeguard);
+        void SubscribeRaw(IObserver<TSource> observer, bool enableSafeguard, Action<IDisposable> setUpstream);
     }
 
     /// <summary>
@@ -34,10 +34,12 @@ namespace System.Reactive
                 throw new ArgumentNullException(nameof(observer));
             }
 
-            return SubscribeRaw(observer, enableSafeguard: true);
+            IDisposable upstream = null!;
+            SubscribeRaw(observer, enableSafeguard: true, v => upstream = v);
+            return upstream;
         }
 
-        public IDisposable SubscribeRaw(IObserver<TSource> observer, bool enableSafeguard)
+        public void SubscribeRaw(IObserver<TSource> observer, bool enableSafeguard, Action<IDisposable> setUpstream)
         {
             IDisposable run;
             ISafeObserver<TSource>? safeObserver = null;
@@ -67,7 +69,7 @@ namespace System.Reactive
             }
 
             safeObserver?.SetResource(run);
-            return run;
+            setUpstream(run);
         }
 
         /// <summary>
@@ -94,10 +96,12 @@ namespace System.Reactive
                 throw new ArgumentNullException(nameof(observer));
             }
 
-            return SubscribeRaw(observer, enableSafeguard: true);
+            IDisposable upstream = null!;
+            SubscribeRaw(observer, enableSafeguard: true, v => upstream = v);
+            return upstream;
         }
 
-        public IDisposable SubscribeRaw(IObserver<TTarget> observer, bool enableSafeguard)
+        public void SubscribeRaw(IObserver<TTarget> observer, bool enableSafeguard, Action<IDisposable> setUpstream)
         {
             ISafeObserver<TTarget>? safeObserver = null;
 
@@ -113,6 +117,7 @@ namespace System.Reactive
             var sink = CreateSink(observer);
 
             safeObserver?.SetResource(sink);
+            setUpstream(sink);
 
             if (CurrentThreadScheduler.IsScheduleRequired)
             {
@@ -124,8 +129,6 @@ namespace System.Reactive
             {
                 Run(sink);
             }
-
-            return sink;
         }
 
         /// <summary>
